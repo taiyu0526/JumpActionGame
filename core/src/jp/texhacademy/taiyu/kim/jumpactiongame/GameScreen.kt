@@ -6,25 +6,41 @@ import com.badlogic.gdx.graphics.GL20//指定した色で塗りつぶしを行�
 import com.badlogic.gdx.graphics.Texture//テクスチャクラススプライトに貼り付ける画像
 import com.badlogic.gdx.graphics.g2d.Sprite//高速に画像を描画するためのクラス
 import com.badlogic.gdx.graphics.g2d.TextureRegion//テクスチャを切り取って貼り付けるためのクラス
-
 import com.badlogic.gdx.utils.viewport.FitViewport //ビューポートクラス
 import com.badlogic.gdx.graphics.OrthographicCamera //カメラクラス
-import com.badlogic.gdx.graphics.TextureArray
-//import com.sun.tools.corba.se.idl.constExpr.Or
+import java.util.*
 
 
 class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
-
-    //カメラのサイズを表す定数を定義
     companion object{
+        //カメラのサイズを表す定数を定義
         val CAMERA_WIDTH = 10f
         val CAMERA_HEIGHT = 15f
+
+
+        val WORLD_WIDTH = 10f
+        val WORLD_HEIGHT = 15 * 20 //２０画面分登ると終了
+
+        val GAME_STATE_READY = 0
+        val GAME_STATE_PLAYING = 1
+        val GAME_STATE_GAMEOVER = 2
+
+        val GRAVITY = -12
     }
 
 
     private val mBg : Sprite//mBgというプロパティにスプライトクラスを付けている
     private val mCamera : OrthographicCamera //カメラを表す「オートグラフィックカメラ」クラス
     private val mViewport: FitViewport //ビューポートを表す「フィットビューポート」クラス
+
+    private var mRandom: Random
+
+    private var mSteps: ArrayList<Step>
+    private var mStars: ArrayList<Star>
+    private lateinit var mUfo: Ufo
+    private lateinit var mPlayer: Player
+
+    private var mGameState: Int
 
 
     init{
@@ -41,11 +57,25 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
         mCamera.setToOrtho(false, CAMERA_WIDTH, CAMERA_HEIGHT)//縦横比が固定される？
         mViewport = FitViewport(CAMERA_WIDTH, CAMERA_HEIGHT,mCamera)
 
+
+        mRandom = Random()
+        mSteps = ArrayList<Step>()
+        mGameState = GAME_STATE_READY
+
+
+        createStage()
+
     }
+
+
 
 
     //上のコンストラクタで準備したスプライトをレンダーメソッド内で描画する。
     override fun render(delta: Float){
+
+        update(delta)
+
+
         //画面を描画する準備をする二つのメソッド
         Gdx.gl.glClearColor(0f,0f,0f,1f)//画面をクリアする時の色を赤、緑、青、透過で表す
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)//上のメソッドで指定した色でクリア（つまり塗り潰し）を行う
@@ -68,6 +98,23 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
         mBg.draw(mGame.batch)//drawする。つまりmBg描画する(Bgはバックグラウンドの略)
 
 
+        // Step
+        for (i in 0 until mSteps.size) {
+            mSteps[i].draw(mGame.batch)
+        }
+
+        // Star
+        for (i in 0 until mStars.size) {
+            mStars[i].draw(mGame.batch)
+        }
+
+        //UFO
+        mUfo.draw(mGame.batch)
+
+        //Player
+        mPlayer.draw(mGame.batch)
+
+
 
 
         mGame.batch.end()
@@ -81,6 +128,65 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
     override fun resize(width: Int, height: Int){
         mViewport.update(width, height)
     }
+
+
+    // ステージを作成する
+    private fun createStage() {
+
+        // テクスチャの準備
+        val stepTexture = Texture("step.png")
+        val starTexture = Texture("star.png")
+        val playerTexture = Texture("uma.png")
+        val ufoTexture = Texture("ufo.png")
+
+        // StepとStarをゴールの高さまで配置していく
+        var y = 0f
+
+        val maxJumpHeight = Player.PLAYER_JUMP_VELOCITY * Player.PLAYER_JUMP_VELOCITY / (2 * -GRAVITY)
+        while (y < WORLD_HEIGHT - 5) {
+            val type = if(mRandom.nextFloat() > 0.8f) Step.STEP_TYPE_MOVING else Step.STEP_TYPE_STATIC
+            val x = mRandom.nextFloat() * (WORLD_WIDTH - Step.STEP_WIDTH)
+
+            val step = Step(type, stepTexture, 0, 0, 144, 36)
+            step.setPosition(x, y)
+            mSteps.add(step)
+
+            if (mRandom.nextFloat() > 0.6f) {
+                val star = Star(starTexture, 0, 0, 72, 72)
+                star.setPosition(step.x + mRandom.nextFloat(), step.y + Star.STAR_HEIGHT + mRandom.nextFloat() * 3)
+                mStars.add(star)
+            }
+
+            y += (maxJumpHeight - 0.5f)
+            y -= mRandom.nextFloat() * (maxJumpHeight / 3)
+        }
+
+        // Playerを配置
+        mPlayer = Player(playerTexture, 0, 0, 72, 72)
+        mPlayer.setPosition(WORLD_WIDTH / 2 - mPlayer.width / 2, Step.STEP_HEIGHT)
+
+        // ゴールのUFOを配置
+        mUfo = Ufo(ufoTexture, 0, 0, 120, 74)
+        mUfo.setPosition(WORLD_WIDTH / 2 - Ufo.UFO_WIDTH / 2, y)
+    }
+
+    // それぞれのオブジェクトの状態をアップデートする
+    private fun update(delta: Float) {
+        when (mGameState) {
+            GAME_STATE_READY ->
+                return
+            GAME_STATE_PLAYING ->
+                return
+            GAME_STATE_GAMEOVER ->
+                return
+        }
+    }
+
+
+
+
+
+
 
 
 }

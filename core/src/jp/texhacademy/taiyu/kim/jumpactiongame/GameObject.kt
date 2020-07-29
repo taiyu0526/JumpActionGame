@@ -15,6 +15,7 @@ open class GameObject(texture: Texture, srcX: Int, srcY: Int, srcWidth: Int, src
 
     //初期化する（初期化ってどういう意味があるんだっけ？）
     init{
-        velocity = Vector2()
+        velocity = Vector2()//ベロシティーとは日本語で「速度」ベクター２クラスは、プロパティにx、yを持つクラス
+
     }
 }
