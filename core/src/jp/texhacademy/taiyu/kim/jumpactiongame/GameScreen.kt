@@ -7,11 +7,15 @@ import com.badlogic.gdx.graphics.Texture//テクスチャクラススプライ�
 import com.badlogic.gdx.graphics.g2d.Sprite//高速に画像を描画するためのクラス
 import com.badlogic.gdx.graphics.g2d.TextureRegion//テクスチャを切り取って貼り付けるためのクラス
 import com.badlogic.gdx.utils.viewport.FitViewport //ビューポートクラス
+import com.badlogic.gdx.math.Rectangle
+import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.graphics.OrthographicCamera //カメラクラス
 import java.util.*
 
 
 class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
+
+    //定数だと思ってください
     companion object{
         //カメラのサイズを表す定数を定義
         val CAMERA_WIDTH = 10f
@@ -41,6 +45,8 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
     private lateinit var mPlayer: Player
 
     private var mGameState: Int
+    private var mHeightSoFar: Float = 0f
+    private var mTouchPoint: Vector3
 
 
     init{
@@ -60,7 +66,9 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
 
         mRandom = Random()
         mSteps = ArrayList<Step>()
+        mStars = ArrayList<Star>()
         mGameState = GAME_STATE_READY
+        mTouchPoint = Vector3()
 
 
         createStage()
@@ -134,7 +142,7 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
     private fun createStage() {
 
         // テクスチャの準備
-        val stepTexture = Texture("step.png")
+        val stepTexture =Texture("step.png")
         val starTexture = Texture("star.png")
         val playerTexture = Texture("uma.png")
         val ufoTexture = Texture("ufo.png")
@@ -174,18 +182,53 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
     private fun update(delta: Float) {
         when (mGameState) {
             GAME_STATE_READY ->
-                return
+                updateReady()
+
             GAME_STATE_PLAYING ->
-                return
+
+                updatePlaying(delta)
+
             GAME_STATE_GAMEOVER ->
-                return
+                updateGameOver()
         }
     }
 
+    private fun updateReady() {
+        if (Gdx.input.justTouched()) {
+            mGameState = GAME_STATE_PLAYING
+        }
+    }
 
+    private fun updatePlaying(delta: Float) {
+        var accel = 0f
+        if (Gdx.input.isTouched) {
+            mViewport.unproject(mTouchPoint.set(Gdx.input.x.toFloat(), Gdx.input.y.toFloat(), 0f))
+            val left = Rectangle(0f, 0f, CAMERA_WIDTH / 2, CAMERA_HEIGHT)
+            val right = Rectangle(CAMERA_WIDTH / 2, 0f, CAMERA_WIDTH / 2, CAMERA_HEIGHT)
+            if (left.contains(mTouchPoint.x, mTouchPoint.y)) {
+                accel = 5.0f
+            }
+            if (right.contains(mTouchPoint.x, mTouchPoint.y)) {
+                accel = -5.0f
+            }
+        }
 
+        // Step
+        for (i in 0 until mSteps.size) {
+            mSteps[i].update(delta)
+        }
 
+        // Player
+        if (mPlayer.y <= 0.5f) {
+            mPlayer.hitStep()
+        }
+        mPlayer.update(delta, accel)
+        mHeightSoFar = Math.max(mPlayer.y, mHeightSoFar)
+    }
 
+    private fun updateGameOver() {
+
+    }
 
 
 
