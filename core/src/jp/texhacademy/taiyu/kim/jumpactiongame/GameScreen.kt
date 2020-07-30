@@ -10,6 +10,7 @@ import com.badlogic.gdx.utils.viewport.FitViewport //ビューポートクラス
 import com.badlogic.gdx.math.Rectangle
 import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.graphics.OrthographicCamera //カメラクラス
+import com.sun.java.accessibility.util.GUIInitializedListener
 import java.util.*
 
 
@@ -25,6 +26,14 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
         val WORLD_WIDTH = 10f
         val WORLD_HEIGHT = 15 * 20 //２０画面分登ると終了
 
+
+                //GUI用のカメラ
+        val GUI_WIDTH = 320f
+        val GUI_HEIGHT = 480f
+
+
+
+
         val GAME_STATE_READY = 0
         val GAME_STATE_PLAYING = 1
         val GAME_STATE_GAMEOVER = 2
@@ -36,6 +45,9 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
     private val mBg : Sprite//mBgというプロパティにスプライトクラスを付けている
     private val mCamera : OrthographicCamera //カメラを表す「オートグラフィックカメラ」クラス
     private val mViewport: FitViewport //ビューポートを表す「フィットビューポート」クラス
+
+    private val mGuiCamera : OrthographicCamera //
+    private val mGuiViewport: FitViewport
 
     private var mRandom: Random
 
@@ -63,6 +75,11 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
         mCamera.setToOrtho(false, CAMERA_WIDTH, CAMERA_HEIGHT)//縦横比が固定される？
         mViewport = FitViewport(CAMERA_WIDTH, CAMERA_HEIGHT,mCamera)
 
+        // GUI用のカメラを設定する
+        mGuiCamera = OrthographicCamera()   // ←追加する
+        mGuiCamera.setToOrtho(false, GUI_WIDTH, GUI_HEIGHT) // ←追加する
+        mGuiViewport = FitViewport(GUI_WIDTH, GUI_HEIGHT, mGuiCamera)   // ←追加する
+
 
         mRandom = Random()
         mSteps = ArrayList<Step>()
@@ -81,6 +98,7 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
     //上のコンストラクタで準備したスプライトをレンダーメソッド内で描画する。
     override fun render(delta: Float){
 
+        //それぞれの状態をアップデートする
         update(delta)
 
 
@@ -94,8 +112,16 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
         mCamera.update()
         mGame.batch.projectionMatrix = mCamera.combined
         //スプライトバッチクラスの「セットプロジェクションマトリクスメソッド」をオルグラフィックカメラクラスのコンバインプロパティを引数に与えて呼び出す。
-
         //流れとしては①アップデートメソッドで、カメラの座標値を計算→　②projectionMatrixメソッド と mcombinedプラパティで座標をスプライトに反映している
+
+
+        //カメラの中心を超えたらカメラをプレイヤーのy上に移動させる　
+        if (mPlayer.y > mCamera.position.y){
+
+            mCamera.position.y = mPlayer.y
+        }//これでプレイヤーに合わせてカメラが動くようになるが、途中からタッチしても反応しなくなる。カメラの座標がどんどん上に上がって、タッチする領域が画面の外に出てしますから。
+        //これを解決するために、GUI用のカメラを別途用意する
+
 
 
         //[！重要！]描画をするさいはスプライトバッチクラスのbeginメソッドとendメソッドの間で行う！
@@ -135,6 +161,7 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
     //リサイズメソッドは、物理的な画面のサイズが変更された時に呼び出されるメソッド（物理的な画面のサイズが変更とは？）
     override fun resize(width: Int, height: Int){
         mViewport.update(width, height)
+        mGuiViewport.update(width, height)
     }
 
 
@@ -201,10 +228,11 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
 
     private fun updatePlaying(delta: Float) {
         var accel = 0f
+
         if (Gdx.input.isTouched) {
-            mViewport.unproject(mTouchPoint.set(Gdx.input.x.toFloat(), Gdx.input.y.toFloat(), 0f))
-            val left = Rectangle(0f, 0f, CAMERA_WIDTH / 2, CAMERA_HEIGHT)
-            val right = Rectangle(CAMERA_WIDTH / 2, 0f, CAMERA_WIDTH / 2, CAMERA_HEIGHT)
+            mGuiViewport.unproject(mTouchPoint.set(Gdx.input.x.toFloat(), Gdx.input.y.toFloat(), 0f))
+            val left = Rectangle(0f, 0f, GUI_WIDTH / 2, GUI_HEIGHT)
+            val right = Rectangle(GUI_WIDTH / 2, 0f, GUI_WIDTH / 2, GUI_HEIGHT)
             if (left.contains(mTouchPoint.x, mTouchPoint.y)) {
                 accel = 5.0f
             }
@@ -224,7 +252,78 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
         }
         mPlayer.update(delta, accel)
         mHeightSoFar = Math.max(mPlayer.y, mHeightSoFar)
+
+        checkCollision()
     }
+
+    //UFOとの当たり判定ボーディングリアクティングルプロパティとは日本語で「境界矩形」つまり長方形の境界を作る
+    private fun checkCollision(){
+        //mPlayerの矩形の境界が、重なったら→どこに？→mUfoの矩形の境界と→ゲームのステータスを「ゲームオーバー」状態にする
+        if (mPlayer.boundingRectangle.overlaps(mUfo.boundingRectangle)){
+
+            mGameState = GAME_STATE_GAMEOVER
+            return
+        }
+
+
+
+        //スターとの当たり判定
+
+        for (i in 0 until mStars.size){
+
+            val star = mStars[i]
+
+            if (star.mState == Star.STAR_NONE){
+
+                continue
+            }
+
+            if (mPlayer.boundingRectangle.overlaps(star.boundingRectangle)){
+
+                star.get()
+                break
+
+            }
+        }
+
+
+        //ステップとの当たり判定
+        //上昇中はステップとの当たり判定を確認しない
+
+        if (mPlayer.velocity.y > 0){
+
+            return
+        }
+
+        for (i in 0 until mSteps.size){
+
+            val step = mSteps[i]
+
+            if (step.mState == Step.STEP_STATE_VANISH){
+
+                continue
+            }
+
+            if (mPlayer.y > step.y){
+                if (mPlayer.boundingRectangle.overlaps(step.boundingRectangle)){
+
+                    mPlayer.hitStep()
+
+                    if (mRandom.nextFloat() > 0.5f){
+
+                        step.vanish()
+                    }
+
+                    break
+                }
+            }
+        }
+
+
+    }
+
+
+
 
     private fun updateGameOver() {
 

@@ -1,11 +1,12 @@
 package jp.texhacademy.taiyu.kim.jumpactiongame
 
+
 import com.badlogic.gdx.graphics.Texture
 
 class Player (texture: Texture, srcX: Int, srcY: Int, srcWidth: Int, srcHeight: Int)
     : GameObject(texture, srcX, srcY, srcWidth, srcHeight) {
 
-    companion object{
+    companion object {
 
         //プレイヤーの横幅と高さを設定
         val PLAYER_WIDTH = 1.0f
@@ -20,17 +21,17 @@ class Player (texture: Texture, srcX: Int, srcY: Int, srcWidth: Int, srcHeight: 
         val PLAYER_MOVE_VELOCITY = 20.0f
     }
 
-    private var mState : Int //状態を保持するmStateを定義
+    private var mState: Int //状態を保持するmStateを定義
 
     //コンストラクタでセットサイズメソッドによるサイズ指定と、mStateに落ちている最中を設定　これは初期化？　
-    init{
+    init {
         setSize(PLAYER_WIDTH, PLAYER_HEIGHT)
         mState = PLAYER_STATE_FALL
     }
 
     //スクリーンのrenderメソッドから呼ばれることを想定しているアップデートメソッド
     //ここでは表示する位置の決定と、状態が変わるかどうかの確認を行う
-    fun update(delta: Float, accelX: Float){
+    fun update(delta: Float, accelX: Float) {
 
         velocity.add(0f, GameScreen.GRAVITY * delta)
         velocity.x = -accelX / 10 * PLAYER_MOVE_VELOCITY
@@ -57,12 +58,11 @@ class Player (texture: Texture, srcX: Int, srcY: Int, srcWidth: Int, srcHeight: 
             x = 0f
         }
 
+    }
         fun hitStep() {
             velocity.y = PLAYER_JUMP_VELOCITY
             mState = PLAYER_STATE_JUMP
         }
 
-
     }
 
-}

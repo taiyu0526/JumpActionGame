@@ -55,7 +55,7 @@ class Step(type: Int, texture: Texture, srcX: Int, srcY: Int, srcWidth: Int, src
     // 消える
     fun vanish() {
         mState = STEP_STATE_VANISH
-        setAlpha(0f)
+        setAlpha(0f)//透明になる
         velocity.x = 0f
     }
 }
