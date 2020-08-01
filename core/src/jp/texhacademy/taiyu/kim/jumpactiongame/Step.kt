@@ -38,6 +38,7 @@ class Step(type: Int, texture: Texture, srcX: Int, srcY: Int, srcWidth: Int, src
 
     // 座標を更新する
     fun update(deltaTime: Float) {
+
         if (mType == STEP_TYPE_MOVING) {
             x += velocity.x * deltaTime
 

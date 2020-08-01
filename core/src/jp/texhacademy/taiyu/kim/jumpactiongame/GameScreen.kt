@@ -4,6 +4,8 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.ScreenAdapter//スクリーンアダプタクラス
 import com.badlogic.gdx.graphics.GL20//指定した色で塗りつぶしを行うクラス
 import com.badlogic.gdx.graphics.Texture//テクスチャクラススプライトに貼り付ける画像
+import com.badlogic.gdx.Preferences//スコアを永続化するための「環境設定」クラス
+import com.badlogic.gdx.graphics.g2d.BitmapFont//フォントを表示させるクラス
 import com.badlogic.gdx.graphics.g2d.Sprite//高速に画像を描画するためのクラス
 import com.badlogic.gdx.graphics.g2d.TextureRegion//テクスチャを切り取って貼り付けるためのクラス
 import com.badlogic.gdx.utils.viewport.FitViewport //ビューポートクラス
@@ -60,6 +62,11 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
     private var mHeightSoFar: Float = 0f
     private var mTouchPoint: Vector3
 
+    private var mFont:BitmapFont //ビットマップフォントプロパティ
+    private var mScore: Int//スコアを保持するプロパティ
+    private var mHighScore : Int//ハイスコアを保持するプロパティ
+
+    private var mPrefs: Preferences//環境設定を保持するプロパティ
 
     init{
         //背景の準備
@@ -86,6 +93,16 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
         mStars = ArrayList<Star>()
         mGameState = GAME_STATE_READY
         mTouchPoint = Vector3()
+
+        mFont = BitmapFont(Gdx.files.internal("font.fnt"), Gdx.files.internal("font.png"),false)
+        mFont.data.setScale(0.8f)//フォントのサイズを０.８倍に小さく
+        mScore = 0
+        mHighScore = 0
+
+
+        // ハイスコアをPreferencesから取得する
+        mPrefs = Gdx.app.getPreferences("taiyuJumpActionGame") // ←追加する
+        mHighScore = mPrefs.getInteger("HIGHSCORE", 0) // ←追加する
 
 
         createStage()
@@ -153,8 +170,20 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
 
         mGame.batch.end()
         //beginは日本語で「始める」endは「終わる」
-
         //このままだと偏って表示されるので、カメラとビューポートという仕組みを使う（7/24）
+
+        //スコアの表示
+        mGuiCamera.update()
+        mGame.batch.projectionMatrix = mGuiCamera.combined
+
+        mGame.batch.begin()
+
+        mFont.draw(mGame.batch, "HighScore: $mHighScore", 16f, GUI_HEIGHT -15)
+        mFont.draw(mGame.batch, "Score: $mScore", 16f, GUI_HEIGHT -35)
+
+        mGame.batch.end()
+
+
     }
 
     //resizeメソッドをオーバーライドして、フィットビューポートクラスのアップデートメソッドを呼び出す
@@ -178,8 +207,13 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
         var y = 0f
 
         val maxJumpHeight = Player.PLAYER_JUMP_VELOCITY * Player.PLAYER_JUMP_VELOCITY / (2 * -GRAVITY)
+
         while (y < WORLD_HEIGHT - 5) {
+
             val type = if(mRandom.nextFloat() > 0.8f) Step.STEP_TYPE_MOVING else Step.STEP_TYPE_STATIC
+            //ランダムでステップが止まっているものか、動いているものになるこの場合は、８０％の確率で止まっているもの
+
+
             val x = mRandom.nextFloat() * (WORLD_WIDTH - Step.STEP_WIDTH)
 
             val step = Step(type, stepTexture, 0, 0, 144, 36)
@@ -193,12 +227,13 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
             }
 
             y += (maxJumpHeight - 0.5f)
+
             y -= mRandom.nextFloat() * (maxJumpHeight / 3)
         }
 
         // Playerを配置
         mPlayer = Player(playerTexture, 0, 0, 72, 72)
-        mPlayer.setPosition(WORLD_WIDTH / 2 - mPlayer.width / 2, Step.STEP_HEIGHT)
+        mPlayer.setPosition(WORLD_WIDTH / 2 - mPlayer.width / 2 , Step.STEP_HEIGHT)
 
         // ゴールのUFOを配置
         mUfo = Ufo(ufoTexture, 0, 0, 120, 74)
@@ -254,6 +289,9 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
         mHeightSoFar = Math.max(mPlayer.y, mHeightSoFar)
 
         checkCollision()
+
+
+        checkGameOver()
     }
 
     //UFOとの当たり判定ボーディングリアクティングルプロパティとは日本語で「境界矩形」つまり長方形の境界を作る
@@ -281,9 +319,24 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
             if (mPlayer.boundingRectangle.overlaps(star.boundingRectangle)){
 
                 star.get()
+
+                //スターを取った後、スコアに反映させる
+                mScore++
+                if (mScore > mHighScore){
+
+                    mHighScore = mScore
+
+                    mPrefs.putInteger("HIGHSCORE", mHighScore) //第１引数にキー、第２引数に値を指定する
+                    mPrefs.flush() //flushメソッドは値を永続化する。呼び忘れに注意！
+                }
+
+
                 break
 
             }
+
+
+
         }
 
 
@@ -323,9 +376,22 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
     }
 
 
+    private fun checkGameOver(){
+
+        if (mHeightSoFar - CAMERA_HEIGHT / 2 > mPlayer.y) {
+            Gdx.app.log("JampActionGame", "GAMEOVER")
+            mGameState = GAME_STATE_GAMEOVER
+        }
+    }
+
+
 
 
     private fun updateGameOver() {
+
+        if (Gdx.input.justTouched()){
+            mGame.screen = ResultScrenn(mGame,mScore)
+        }
 
     }
 
