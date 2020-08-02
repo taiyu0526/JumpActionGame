@@ -5,6 +5,7 @@ import com.badlogic.gdx.ScreenAdapter//スクリーンアダプタクラス
 import com.badlogic.gdx.graphics.GL20//指定した色で塗りつぶしを行うクラス
 import com.badlogic.gdx.graphics.Texture//テクスチャクラススプライトに貼り付ける画像
 import com.badlogic.gdx.Preferences//スコアを永続化するための「環境設定」クラス
+import com.badlogic.gdx.audio.Sound
 import com.badlogic.gdx.graphics.g2d.BitmapFont//フォントを表示させるクラス
 import com.badlogic.gdx.graphics.g2d.Sprite//高速に画像を描画するためのクラス
 import com.badlogic.gdx.graphics.g2d.TextureRegion//テクスチャを切り取って貼り付けるためのクラス
@@ -12,12 +13,13 @@ import com.badlogic.gdx.utils.viewport.FitViewport //ビューポートクラス
 import com.badlogic.gdx.math.Rectangle
 import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.graphics.OrthographicCamera //カメラクラス
-import com.sun.java.accessibility.util.GUIInitializedListener
+
+
 import java.util.*
+import kotlin.collections.ArrayList
 
 
 class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
-
     //定数だと思ってください
     companion object{
         //カメラのサイズを表す定数を定義
@@ -57,6 +59,7 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
     private var mStars: ArrayList<Star>
     private lateinit var mUfo: Ufo
     private lateinit var mPlayer: Player
+    private lateinit var mEnemy: ArrayList<Enemy>
 
     private var mGameState: Int
     private var mHeightSoFar: Float = 0f
@@ -67,6 +70,18 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
     private var mHighScore : Int//ハイスコアを保持するプロパティ
 
     private var mPrefs: Preferences//環境設定を保持するプロパティ
+
+    var sound : Sound
+
+    var sound2 :Sound
+
+    var sound3:Sound
+
+
+
+
+
+
 
     init{
         //背景の準備
@@ -91,13 +106,24 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
         mRandom = Random()
         mSteps = ArrayList<Step>()
         mStars = ArrayList<Star>()
+        mEnemy = ArrayList<Enemy>()
         mGameState = GAME_STATE_READY
         mTouchPoint = Vector3()
+
 
         mFont = BitmapFont(Gdx.files.internal("font.fnt"), Gdx.files.internal("font.png"),false)
         mFont.data.setScale(0.8f)//フォントのサイズを０.８倍に小さく
         mScore = 0
         mHighScore = 0
+
+        sound = Gdx.audio.newSound(Gdx.files.internal("data/coinget.mp3"))
+
+        sound2 = Gdx.audio.newSound(Gdx.files.internal("data/sound2.mp3"))
+
+        sound3 = Gdx.audio.newSound(Gdx.files.internal("data/himei.mp3"))
+
+
+
 
 
         // ハイスコアをPreferencesから取得する
@@ -115,8 +141,10 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
     //上のコンストラクタで準備したスプライトをレンダーメソッド内で描画する。
     override fun render(delta: Float){
 
+
         //それぞれの状態をアップデートする
         update(delta)
+
 
 
         //画面を描画する準備をする二つのメソッド
@@ -148,6 +176,9 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
         mBg.setPosition(mCamera.position.x - CAMERA_WIDTH / 2, mCamera.position.y - CAMERA_HEIGHT / 2)
         mBg.draw(mGame.batch)//drawする。つまりmBg描画する(Bgはバックグラウンドの略)
 
+        //bgm
+
+
 
         // Step
         for (i in 0 until mSteps.size) {
@@ -165,11 +196,17 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
         //Player
         mPlayer.draw(mGame.batch)
 
-
+        //enemy
+        for (i in 0 until mEnemy.size) {
+            mEnemy[i].draw(mGame.batch)
+        }
 
 
         mGame.batch.end()
         //beginは日本語で「始める」endは「終わる」
+
+
+
         //このままだと偏って表示されるので、カメラとビューポートという仕組みを使う（7/24）
 
         //スコアの表示
@@ -194,14 +231,17 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
     }
 
 
+
     // ステージを作成する
     private fun createStage() {
+
 
         // テクスチャの準備
         val stepTexture =Texture("step.png")
         val starTexture = Texture("star.png")
         val playerTexture = Texture("uma.png")
         val ufoTexture = Texture("ufo.png")
+        val enemyTexture = Texture("enemy.png")
 
         // StepとStarをゴールの高さまで配置していく
         var y = 0f
@@ -210,7 +250,7 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
 
         while (y < WORLD_HEIGHT - 5) {
 
-            val type = if(mRandom.nextFloat() > 0.8f) Step.STEP_TYPE_MOVING else Step.STEP_TYPE_STATIC
+            val type = if(mRandom.nextFloat() > 0.9f) Step.STEP_TYPE_MOVING else Step.STEP_TYPE_STATIC
             //ランダムでステップが止まっているものか、動いているものになるこの場合は、８０％の確率で止まっているもの
 
 
@@ -221,15 +261,27 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
             mSteps.add(step)
 
             if (mRandom.nextFloat() > 0.6f) {
-                val star = Star(starTexture, 0, 0, 72, 72)
+                val star = Star(starTexture, 0, 0, 72 , 72)
                 star.setPosition(step.x + mRandom.nextFloat(), step.y + Star.STAR_HEIGHT + mRandom.nextFloat() * 3)
                 mStars.add(star)
+            }
+
+
+            //ランダムで敵が出てくる確率。例えば0.5だと５０％
+            if (mRandom.nextFloat() > 0.8f){
+
+                val enemy = Enemy(enemyTexture,0,0,240,240)
+                enemy.setPosition(step.x - mRandom.nextFloat(), step.y  - mRandom.nextFloat() * 3)
+                mEnemy.add(enemy)
             }
 
             y += (maxJumpHeight - 0.5f)
 
             y -= mRandom.nextFloat() * (maxJumpHeight / 3)
         }
+
+
+
 
         // Playerを配置
         mPlayer = Player(playerTexture, 0, 0, 72, 72)
@@ -239,6 +291,11 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
         mUfo = Ufo(ufoTexture, 0, 0, 120, 74)
         mUfo.setPosition(WORLD_WIDTH / 2 - Ufo.UFO_WIDTH / 2, y)
     }
+
+
+
+
+
 
     // それぞれのオブジェクトの状態をアップデートする
     private fun update(delta: Float) {
@@ -299,13 +356,31 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
         //mPlayerの矩形の境界が、重なったら→どこに？→mUfoの矩形の境界と→ゲームのステータスを「ゲームオーバー」状態にする
         if (mPlayer.boundingRectangle.overlaps(mUfo.boundingRectangle)){
 
+
+            sound2.play(0.5f)
             mGameState = GAME_STATE_GAMEOVER
             return
         }
 
+        //エネミーとの当たり判定、当たったらゲームオーバー
+        for (i in 0 until mEnemy.size){
+
+            val enemy = mEnemy[i]
+
+            if (mPlayer.boundingRectangle.overlaps(enemy.boundingRectangle)){
+
+                sound3.play()
+                mGameState = GAME_STATE_GAMEOVER
+            }
 
 
-        //スターとの当たり判定
+            }
+
+
+
+
+
+                //スターとの当たり判定
 
         for (i in 0 until mStars.size){
 
@@ -319,6 +394,7 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
             if (mPlayer.boundingRectangle.overlaps(star.boundingRectangle)){
 
                 star.get()
+                sound.play(0.5f)
 
                 //スターを取った後、スコアに反映させる
                 mScore++
@@ -378,8 +454,11 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
 
     private fun checkGameOver(){
 
+
+
         if (mHeightSoFar - CAMERA_HEIGHT / 2 > mPlayer.y) {
             Gdx.app.log("JampActionGame", "GAMEOVER")
+            sound3.play()
             mGameState = GAME_STATE_GAMEOVER
         }
     }
@@ -394,6 +473,9 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
         }
 
     }
+
+
+
 
 
 

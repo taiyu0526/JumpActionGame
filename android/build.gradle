@@ -92,6 +92,6 @@ task run(type: Exec) {
 eclipse.project.name = appName + "-android"
 
 dependencies {
-    compile 'com.google,android.gms:play-services:6.+'
+    compile 'com.google.android.gms:play-services:6.+'
 }
 

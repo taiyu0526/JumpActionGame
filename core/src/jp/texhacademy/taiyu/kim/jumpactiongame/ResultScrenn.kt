@@ -26,6 +26,11 @@ class ResultScrenn (private val mGame: JunpActionGame, private val mScore: Int):
 
     init {
 
+        if (mGame.mRequestHandler != null){
+
+            mGame.mRequestHandler.showAds(true)
+        }
+
         // 背景の準備
         val bgTexture = Texture("resultback.png")
         mBg = Sprite(TextureRegion(bgTexture, 0, 0, 540, 810))
@@ -57,6 +62,9 @@ class ResultScrenn (private val mGame: JunpActionGame, private val mScore: Int):
         mGame.batch.end()
 
         if (Gdx.input.justTouched()) {
+            if (mGame.mRequestHandler != null){
+                mGame.mRequestHandler.showAds(false)
+            }
             mGame.screen = GameScreen(mGame)
         }
     }
