@@ -85,8 +85,8 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
 
     init{
         //背景の準備
-        val bgTexture = Texture("back.png")//テクスチャクラスで、使用する画像を指定している
-        mBg = Sprite(TextureRegion(bgTexture, 0, 0, 540,810))//テクスチャとして用意した画像を切り取って貼り付けるために使用
+        val bgTexture = Texture("bg1.png")//テクスチャクラスで、使用する画像を指定している
+        mBg = Sprite(TextureRegion(bgTexture, 0, 0, 520,750))//テクスチャとして用意した画像を切り取って貼り付けるために使用
 
         mBg.setSize(CAMERA_WIDTH, CAMERA_HEIGHT)
 
@@ -237,8 +237,8 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
 
 
         // テクスチャの準備
-        val stepTexture =Texture("step.png")
-        val starTexture = Texture("star.png")
+        val stepTexture =Texture("kumo.png")
+        val starTexture = Texture("coin.png")
         val playerTexture = Texture("uma.png")
         val ufoTexture = Texture("ufo.png")
         val enemyTexture = Texture("enemy.png")
@@ -256,12 +256,12 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
 
             val x = mRandom.nextFloat() * (WORLD_WIDTH - Step.STEP_WIDTH)
 
-            val step = Step(type, stepTexture, 0, 0, 144, 36)
+            val step = Step(type, stepTexture, 0, 0, 256, 126)
             step.setPosition(x, y)
             mSteps.add(step)
 
             if (mRandom.nextFloat() > 0.6f) {
-                val star = Star(starTexture, 0, 0, 72 , 72)
+                val star = Star(starTexture, 0, 0, 128 , 128)
                 star.setPosition(step.x + mRandom.nextFloat(), step.y + Star.STAR_HEIGHT + mRandom.nextFloat() * 3)
                 mStars.add(star)
             }
@@ -270,7 +270,7 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
             //ランダムで敵が出てくる確率。例えば0.5だと５０％
             if (mRandom.nextFloat() > 0.8f){
 
-                val enemy = Enemy(enemyTexture,0,0,240,240)
+                val enemy = Enemy(enemyTexture,0,0,120,120)
                 enemy.setPosition(step.x - mRandom.nextFloat(), step.y  - mRandom.nextFloat() * 3)
                 mEnemy.add(enemy)
             }
@@ -284,7 +284,7 @@ class GameScreen(private val mGame: JunpActionGame): ScreenAdapter() {
 
 
         // Playerを配置
-        mPlayer = Player(playerTexture, 0, 0, 72, 72)
+        mPlayer = Player(playerTexture, 0, 0, 126, 126)
         mPlayer.setPosition(WORLD_WIDTH / 2 - mPlayer.width / 2 , Step.STEP_HEIGHT)
 
         // ゴールのUFOを配置

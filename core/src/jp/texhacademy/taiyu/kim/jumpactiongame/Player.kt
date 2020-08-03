@@ -13,8 +13,8 @@ class Player (texture: Texture, srcX: Int, srcY: Int, srcWidth: Int, srcHeight: 
     companion object {
 
         //プレイヤーの横幅と高さを設定
-        val PLAYER_WIDTH = 1.0f
-        val PLAYER_HEIGHT = 1.0f
+        val PLAYER_WIDTH = 1.6f
+        val PLAYER_HEIGHT = 1.6f
 
         //状態→　０の時はジャンプ、１のときは落ちている最中
         val PLAYER_STATE_JUMP = 0
@@ -22,7 +22,7 @@ class Player (texture: Texture, srcX: Int, srcY: Int, srcWidth: Int, srcHeight: 
 
         //速度
         val PLAYER_JUMP_VELOCITY = 11.0f
-        val PLAYER_MOVE_VELOCITY = 20.0f
+        val PLAYER_MOVE_VELOCITY = 30.0f
     }
 
 

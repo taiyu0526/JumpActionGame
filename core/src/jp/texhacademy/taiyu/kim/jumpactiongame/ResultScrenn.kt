@@ -32,8 +32,8 @@ class ResultScrenn (private val mGame: JunpActionGame, private val mScore: Int):
         }
 
         // 背景の準備
-        val bgTexture = Texture("resultback.png")
-        mBg = Sprite(TextureRegion(bgTexture, 0, 0, 540, 810))
+        val bgTexture = Texture("bg2.png")
+        mBg = Sprite(TextureRegion(bgTexture, 0, 0, 520, 750))
         mBg.setSize(GUI_WIDTH, GUI_HEIGHT)
         mBg.setPosition(0f, 0f)
 
@@ -57,8 +57,8 @@ class ResultScrenn (private val mGame: JunpActionGame, private val mScore: Int):
 
         mGame.batch.begin()
         mBg.draw(mGame.batch)
-        mFont.draw(mGame.batch, "Score: $mScore", 0f, GUI_HEIGHT / 2 + 40, GUI_WIDTH, Align.center, false)
-        mFont.draw(mGame.batch, "Retry?", 0f, GUI_HEIGHT / 2 - 40, GUI_WIDTH, Align.center, false)
+        mFont.draw(mGame.batch, "Score: $mScore", 0f, GUI_HEIGHT / 2 + 200, GUI_WIDTH, Align.center, false)
+        mFont.draw(mGame.batch, "Retry?", 0f, GUI_HEIGHT / 2 + 150, GUI_WIDTH, Align.center, false)
         mGame.batch.end()
 
         if (Gdx.input.justTouched()) {
